@@ -35,31 +35,25 @@ def get_soup(url, html_file=False):
 
 
 def get_reviews(soup, wanted_lang='France'):
-    """returns a list of reviews in the wanted language from a soup object"""
-    
-    reviews = soup.find_all('div', class_='review')
-    
-    lang_filtered_reviews = []
-    
-    for review in reviews:
-        lang = review.find('span', class_='review-date').text.strip()
-        if lang.find(wanted_lang) != -1:
-            lang_filtered_reviews.append(review)
-    
-    return lang_filtered_reviews
-
-
-def get_reviews_infos(soup, wanted_lang='France'):
     """returns a list of dict about the review in the wanted language as
     {'product': , title': , 'rating': , 'text': } from a soup object"""
     
     print('Scraping reviews...')
 
+    all_reviews = soup.find_all('div', class_='review')
+
+    lang_filtered_reviews = []
+
+    for review in all_reviews:
+        lang = review.find('span', class_='review-date').text.strip()
+        if lang.find(wanted_lang) != -1:
+            lang_filtered_reviews.append(review)
+
     product = soup.title.text.replace('Amazon.fr\xa0:Commentaires en ligne: ', '')
     
-    reviews_infos = []
+    reviews = []
     
-    for review in get_reviews(soup, wanted_lang):
+    for review in lang_filtered_reviews:
     
         review_infos = {
             'product': product,
@@ -68,11 +62,11 @@ def get_reviews_infos(soup, wanted_lang='France'):
             'text': review.find('span', class_='review-text').text.strip()
         }
         
-        reviews_infos.append(review_infos)
+        reviews.append(review_infos)
         
-    print(f'{len(reviews_infos)} reviews scraped')
+    print(f'{len(reviews)} reviews scraped')
 
-    return reviews_infos
+    return reviews
 
 
 def reviews_to_csv(reviews):
