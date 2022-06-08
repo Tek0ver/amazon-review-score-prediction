@@ -20,16 +20,12 @@ def get_soup(url, html_file=False):
                 raise ValueError('Amazon robot detection, try later')
             else:
                 raise ValueError('unknown error')
-
-        print('Soup made from url')
     
     else:
         
         with open(url, 'r') as file:
             contents = file.read()
             soup = BeautifulSoup(contents, 'html.parser')
-        
-        print('Soup made from file')
 
     return soup
 
@@ -37,8 +33,6 @@ def get_soup(url, html_file=False):
 def get_reviews(soup, wanted_lang='France'):
     """returns a list of dict about the review in the wanted language as
     {'product': , title': , 'rating': , 'text': } from a soup object"""
-    
-    print('Scraping reviews...')
 
     all_reviews = soup.find_all('div', class_='review')
 
@@ -75,10 +69,10 @@ def reviews_to_csv(reviews):
     
     if path.exists(f'data/{file_name}'):
         write_header = False
-        print('Rows added to existing file')
+        print(f'{len(reviews)} reviews added to existing file')
     else:
         write_header = True
-        print('New file created')
+        print(f'New file created, {len(reviews)} reviews')
         
     with open(f'data/{file_name}', 'a') as csvfile:
         fieldnames = reviews[0].keys()
@@ -89,3 +83,26 @@ def reviews_to_csv(reviews):
         
         for review in reviews:
             writer.writerow(review)
+
+
+def scrap_pages(url, start, end):
+
+    reviews = []
+
+    for page in range(start, end+1):
+
+        print(f'Scraping page {page}')
+
+        soup = get_soup(f'{url}&pageNumber={page}')
+
+        for review in get_reviews(soup):
+            reviews.append(review)
+
+        if soup.find('li', class_='a-disabled a-last'):
+            print('Last page, stop')
+            break
+
+        if page == end:
+            print(f'All pages scraped, {len(reviews)} reviews')
+
+    return reviews
