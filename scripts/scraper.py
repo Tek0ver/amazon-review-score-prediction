@@ -1,6 +1,7 @@
-import requests, csv
+import requests
 from bs4 import BeautifulSoup
-from os import path
+from os import path, listdir
+import pandas as pd
 
 
 def get_soup(url, html_file=False):
@@ -65,27 +66,27 @@ def get_reviews(soup, wanted_lang='France'):
 
 def reviews_to_csv(reviews):
 
-    file_name = reviews[0]['product'].replace(' ', '_') + '.csv'
+    file_name = reviews[0]['product'] + '.csv'
+    file_path = f'data/{file_name}'
     
-    if path.exists(f'data/{file_name}'):
-        write_header = False
+    if path.exists(file_path):
+        df = pd.read_csv(file_path, index_col=0)
+        df_new = pd.DataFrame(reviews)
+        df = pd.concat([df, df_new])
+        df = df.reset_index(drop=True)
         print(f'{len(reviews)} reviews added to existing file')
     else:
-        write_header = True
+        df = pd.DataFrame(reviews)
         print(f'New file created, {len(reviews)} reviews')
-        
-    with open(f'data/{file_name}', 'a') as csvfile:
-        fieldnames = reviews[0].keys()
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        
-        if write_header:
-            writer.writeheader()
-        
-        for review in reviews:
-            writer.writerow(review)
+
+    len_before = df.shape[0]
+    df = df.drop_duplicates()
+    print(f'{len_before - df.shape[0]} duplicated rows deleted')
+
+    df.to_csv(file_path)
 
 
-def scrap_pages(url, start, end):
+def scrape_pages(url, start=1, end=5):
 
     reviews = []
 
@@ -106,3 +107,40 @@ def scrap_pages(url, start, end):
             print(f'All pages scraped, {len(reviews)} reviews')
 
     return reviews
+
+
+def scrape_urls():
+    """scrape urls from file then make one csv
+    with reviews for each file"""
+
+    urls_file = "urls_to_scrap.txt"
+
+    print(f'Sourcing urls from {urls_file}')
+
+    with open(urls_file, 'r') as file:
+        urls = file.readlines()
+
+    clean_urls = []
+
+    for url in urls:
+        url = url[:-1]
+        if url:
+            clean_urls.append(url)
+
+    urls = clean_urls
+
+    if not urls:
+        print(f'{urls_file} is empty')
+        exit()
+
+    print(f'{len(urls)} url{"s" if len(urls) > 1 else ""} found')
+
+    print('Start scraping :')
+
+    for i, url in enumerate(urls):
+
+        print(f'scraping url {i+1} : {url}')
+
+        reviews = scrape_pages(url)
+        if reviews:
+            reviews_to_csv(reviews)
