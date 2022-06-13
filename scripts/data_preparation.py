@@ -8,7 +8,8 @@ def make_dataframe(preprocess=True, save_csv=True):
     """opens all files then make a Dataframe with all reviews"""
     
     files = listdir('data/')
-    files.remove('_all_reviews.csv')
+    if '_all_reviews.csv' in files:
+        files.remove('_all_reviews.csv')
     print(f'{len(files)} files founded')
     
     for i, file in enumerate(files):

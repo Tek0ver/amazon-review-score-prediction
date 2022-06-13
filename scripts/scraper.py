@@ -86,7 +86,7 @@ def reviews_to_csv(reviews):
     df.to_csv(file_path)
 
 
-def scrape_pages(url, start=1, end=5):
+def scrape_pages(url, start=1, end=5, autostop=True):
 
     reviews = []
 
@@ -96,7 +96,14 @@ def scrape_pages(url, start=1, end=5):
 
         soup = get_soup(f'{url}&pageNumber={page}')
 
-        for review in get_reviews(soup):
+        page_reviews = get_reviews(soup)
+
+        if autostop:
+            if not page_reviews:
+                print('No more reviews in selected language')
+                break
+
+        for review in page_reviews:
             reviews.append(review)
 
         if soup.find('li', class_='a-disabled a-last'):
@@ -141,6 +148,6 @@ def scrape_urls():
 
         print(f'scraping url {i+1} : {url}')
 
-        reviews = scrape_pages(url)
+        reviews = scrape_pages(url, 1, 20)
         if reviews:
             reviews_to_csv(reviews)
